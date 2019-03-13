@@ -25,14 +25,14 @@ CRGB leds[NUM_LEDS];
 #define BRIGHTNESS          75
 #define FRAMES_PER_SECOND   60
 
-const int buttonPin = 3;     // the number of the pushbutton pin
+//const int buttonPin = 3;     // the number of the pushbutton pin
 int buttonState = 0;
 
 const int motionPin = 6;
 int motionState = 0;
 
 void setup() {
-  delay(3000); // 3 second delay for recovery
+//  delay(3000); // 3 second delay for recovery
   
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -40,6 +40,9 @@ void setup() {
 
   // set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
+
+  Serial.begin(115200);
+
 }
 
 
@@ -67,58 +70,78 @@ unsigned long baseLEDBrightness = 200;
 unsigned long lastLEDValue = baseLEDBrightness;
 
 bool motionOff = true;
+
+unsigned long sum = 0;
+const int buttonPin = A6;
+
+void soundLoop() {
+  sum = 0;
+  int shift = 5;
+  int sampleSize = pow(2,shift);
+  for(int i=0; i<sampleSize; i++)
+  {
+      sum -= analogRead(buttonPin);
+  }
+  sum >>= shift;
+  Serial.println(sum);
+  delay(10);
+}
   
 void loop()
 {
-  buttonState = digitalRead(buttonPin);
+//  buttonState = digitalRead(buttonPin);
   motionState = digitalRead(motionPin);
 
+//  Serial.println(buttonState);
 
-  if (buttonState == HIGH && motionOff) {
-    motionOff = false;
-    // If click outside of input delay length light up new LED
-    if (millis() > lastClickTime + inputDelay) {
-        if (clickCount <= NUM_LEDS) {
-            clickCount++;
-            Serial.println(clickCount);
-        }
-        gHue = clickCount * 6;
+  soundLoop();
 
-        lastLEDValue = baseLEDBrightness;
-        leds[clickCount] += CHSV( gHue, 255, lastLEDValue);
-        lastClickTime = millis();
-        totalTime += ledLength;
-    }
-  }
-  
-  if (millis() > lastClickTime + inputDelay) {
-      motionOff = true;
-  }
 
-  // Dimming method using hard value
-  // NEED TO HAVE PROPORTIONAL VALUE TO TIME PER LED !!!!!!!!!!!!!!!!!!!!
-  if (millis() > lastClickTime + dimDelay) {
-      if (lastLEDValue >= 0) {
-          lastLEDValue -= 0.5;
-      } else {
-          lastLEDValue = 0;
-      }
-      leds[clickCount] = CHSV( gHue, 255, lastLEDValue);
+//  if (buttonState == HIGH && motionOff) {
+//    motionOff = false;
+//    // If click outside of input delay length light up new LED
+//    if (millis() > lastClickTime + inputDelay) {
+//        if (clickCount <= NUM_LEDS) {
+//            clickCount++;
+//            Serial.println(clickCount);
+//        }
+//        gHue = clickCount * 6;
+//
+//        lastLEDValue = baseLEDBrightness;
+//        leds[clickCount] += CHSV( gHue, 255, lastLEDValue);
+//        lastClickTime = millis();
+//        totalTime += ledLength;
+//    }
+//  }
+//  
+//  if (millis() > lastClickTime + inputDelay) {
+//      motionOff = true;
+//  }
+//
+//  // Dimming method using hard value
+//  // NEED TO HAVE PROPORTIONAL VALUE TO TIME PER LED !!!!!!!!!!!!!!!!!!!!
+//  if (millis() > lastClickTime + dimDelay) {
+//      if (lastLEDValue >= 0) {
+//          lastLEDValue -= 0.5;
+//      } else {
+//          lastLEDValue = 0;
+//      }
+//      leds[clickCount] = CHSV( gHue, 255, lastLEDValue);
 //      Serial.println(lastLEDValue);
-  }
-
-  // If set time for each LED passes turn off last LED and update values
-  unsigned long now = millis();
-  if (now - lastClickTime > ledLength) {
-    leds[clickCount] = CHSV(gHue,0,0);
-    totalTime -= ledLength;
-    lastClickTime = millis();
-    if (clickCount >= 0) {
-          clickCount--;
-    }
-    lastLEDValue = baseLEDBrightness;
-    Serial.println(clickCount);
-  }
+//  }
+//
+//  // If set time for each LED passes turn off last LED and update values
+//  unsigned long now = millis();
+//  if (now - lastClickTime > ledLength) {
+//    leds[clickCount] = CHSV(gHue,0,0);
+//    totalTime -= ledLength;
+//    lastClickTime = millis();
+//    if (clickCount >= 0) {
+//          clickCount--;
+//    }
+//    lastLEDValue = baseLEDBrightness;
+//    Serial.println(clickCount);
+//  }
 
 
   
