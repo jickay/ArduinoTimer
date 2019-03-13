@@ -31,6 +31,8 @@ int buttonState = 0;
 const int motionPin = 6;
 int motionState = 0;
 
+const int buzzerPin = A8;
+
 void setup() {
 //  delay(3000); // 3 second delay for recovery
   
@@ -89,59 +91,65 @@ void soundLoop() {
   
 void loop()
 {
-//  buttonState = digitalRead(buttonPin);
-  motionState = digitalRead(motionPin);
+  buttonState = digitalRead(buttonPin);
+//  motionState = digitalRead(motionPin);
 
 //  Serial.println(buttonState);
 
-  soundLoop();
+//  soundLoop();
 
 
-//  if (buttonState == HIGH && motionOff) {
-//    motionOff = false;
-//    // If click outside of input delay length light up new LED
-//    if (millis() > lastClickTime + inputDelay) {
-//        if (clickCount <= NUM_LEDS) {
-//            clickCount++;
-//            Serial.println(clickCount);
-//        }
-//        gHue = clickCount * 6;
-//
-//        lastLEDValue = baseLEDBrightness;
-//        leds[clickCount] += CHSV( gHue, 255, lastLEDValue);
-//        lastClickTime = millis();
-//        totalTime += ledLength;
-//    }
-//  }
-//  
-//  if (millis() > lastClickTime + inputDelay) {
-//      motionOff = true;
-//  }
-//
-//  // Dimming method using hard value
-//  // NEED TO HAVE PROPORTIONAL VALUE TO TIME PER LED !!!!!!!!!!!!!!!!!!!!
-//  if (millis() > lastClickTime + dimDelay) {
-//      if (lastLEDValue >= 0) {
-//          lastLEDValue -= 0.5;
-//      } else {
-//          lastLEDValue = 0;
-//      }
-//      leds[clickCount] = CHSV( gHue, 255, lastLEDValue);
+  if (buttonState == HIGH && motionOff) {
+    motionOff = false;
+    // If click outside of input delay length light up new LED
+    if (millis() > lastClickTime + inputDelay) {
+        if (clickCount <= NUM_LEDS) {
+            clickCount++;
+            Serial.println(clickCount);
+        }
+        gHue = clickCount * 6;
+
+        lastLEDValue = baseLEDBrightness;
+        leds[clickCount] += CHSV( gHue, 255, lastLEDValue);
+        lastClickTime = millis();
+        totalTime += ledLength;
+         
+    }
+  }
+  
+  if (millis() > lastClickTime + inputDelay) {
+      motionOff = true;
+  }
+
+  // Dimming method using hard value
+  // NEED TO HAVE PROPORTIONAL VALUE TO TIME PER LED !!!!!!!!!!!!!!!!!!!!
+  if (millis() > lastClickTime + dimDelay) {
+      if (lastLEDValue >= 0) {
+          lastLEDValue -= 0.5;
+      } else {
+          lastLEDValue = 0;
+      }
+      leds[clickCount] = CHSV( gHue, 255, lastLEDValue);
 //      Serial.println(lastLEDValue);
-//  }
-//
-//  // If set time for each LED passes turn off last LED and update values
-//  unsigned long now = millis();
-//  if (now - lastClickTime > ledLength) {
-//    leds[clickCount] = CHSV(gHue,0,0);
-//    totalTime -= ledLength;
-//    lastClickTime = millis();
-//    if (clickCount >= 0) {
-//          clickCount--;
-//    }
-//    lastLEDValue = baseLEDBrightness;
+  }
+
+  // If set time for each LED passes turn off last LED and update values
+  unsigned long now = millis();
+  if (now - lastClickTime > ledLength) {
+    leds[clickCount] = CHSV(gHue,0,0);
+    totalTime -= ledLength;
+    lastClickTime = millis();
+    if (clickCount >= 0) {
+          clickCount--;
+          if (clickCount < 0) {
+            Serial.println("Buzz!");
+            tone(buzzerPin, 500, 500);
+          }
+
+    }
+    lastLEDValue = baseLEDBrightness;
 //    Serial.println(clickCount);
-//  }
+  }
 
 
   
