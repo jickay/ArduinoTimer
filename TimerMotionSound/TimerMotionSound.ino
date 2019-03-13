@@ -55,12 +55,16 @@ uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 unsigned long changemillis;
 unsigned long totalTime; // in millis
 unsigned long lastClickTime;
-unsigned long ledLength = 2000;
+unsigned long ledLength = 2000; // Time amount for each LED in ms
 
 int clickCount = 0;
 int countMax = 25;
 
-int inputDelay = 1000;
+unsigned long inputDelay = 500;
+unsigned long dimDelay = ledLength/255;
+
+unsigned long baseLEDBrightness = 200;
+unsigned long lastLEDValue = baseLEDBrightness;
 
 bool motionOff = true;
   
@@ -68,15 +72,20 @@ void loop()
 {
   buttonState = digitalRead(buttonPin);
   motionState = digitalRead(motionPin);
-  
-  if (motionState == HIGH && motionOff) {
+
+
+  if (buttonState == HIGH && motionOff) {
     motionOff = false;
-    // turn LED on:
+    // If click outside of input delay length light up new LED
     if (millis() > lastClickTime + inputDelay) {
         if (clickCount <= NUM_LEDS) {
             clickCount++;
+            Serial.println(clickCount);
         }
-        leds[clickCount] += CHSV( gHue, 255, 192);
+        gHue = clickCount * 6;
+
+        lastLEDValue = baseLEDBrightness;
+        leds[clickCount] += CHSV( gHue, 255, lastLEDValue);
         lastClickTime = millis();
         totalTime += ledLength;
     }
@@ -84,9 +93,21 @@ void loop()
   
   if (millis() > lastClickTime + inputDelay) {
       motionOff = true;
-//      lastClickTime = millis();
   }
 
+  // Dimming method using hard value
+  // NEED TO HAVE PROPORTIONAL VALUE TO TIME PER LED !!!!!!!!!!!!!!!!!!!!
+  if (millis() > lastClickTime + dimDelay) {
+      if (lastLEDValue >= 0) {
+          lastLEDValue -= 0.5;
+      } else {
+          lastLEDValue = 0;
+      }
+      leds[clickCount] = CHSV( gHue, 255, lastLEDValue);
+//      Serial.println(lastLEDValue);
+  }
+
+  // If set time for each LED passes turn off last LED and update values
   unsigned long now = millis();
   if (now - lastClickTime > ledLength) {
     leds[clickCount] = CHSV(gHue,0,0);
@@ -95,8 +116,10 @@ void loop()
     if (clickCount >= 0) {
           clickCount--;
     }
+    lastLEDValue = baseLEDBrightness;
     Serial.println(clickCount);
   }
+
 
   
   // send the 'leds' array out to the actual LED strip
