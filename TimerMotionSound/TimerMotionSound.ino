@@ -31,7 +31,7 @@ int buttonState = 0;
 const int motionPin = 6;
 int motionState = 0;
 
-const int buzzerPin = A8;
+const int buzzerPin = 8;
 
 void setup() {
 //  delay(3000); // 3 second delay for recovery
@@ -62,7 +62,7 @@ unsigned long lastClickTime;
 unsigned long ledLength = 2000; // Time amount for each LED in ms
 
 int clickCount = 0;
-int countMax = 25;
+int countMax = 24;
 
 unsigned long inputDelay = 500;
 unsigned long dimDelay = ledLength/255;
@@ -74,7 +74,7 @@ bool motionOn = true;
 
 unsigned long sum = 0;
 unsigned long lastNoise = 0;
-unsigned long threshold = 1.34217E8;
+unsigned long threshold = 750;
 const int buttonPin = A6;
 
 void soundLoop() {
@@ -85,21 +85,23 @@ void soundLoop() {
   {
     unsigned long signal = analogRead(buttonPin);
 //    Serial.println(signal);
-    int threshold = 900;
-    if (signal > threshold) {
-      signal = 0;
-    }
-      if (signal < threshold) {
-        signal = signal * 10;
-      }
-//     Serial.println(signal);
+ //   int threshold = 900;
+//    if (signal > threshold) {
+//      signal = 0;
+//    }
+//      if (signal < threshold) {
+//        signal = signal * 10;
+//      }
+////     Serial.println(signal);
       sum += signal;
   }
   sum >>= shift;
-//  Serial.println(sum);
-  delay(100);
+  lastNoise = sum;
+  Serial.println(sum);
+  delay(10);
 }
-  
+
+bool prevIsHigh = false;
 void loop()
 {
 //  buttonState = digitalRead(buttonPin);
@@ -108,13 +110,11 @@ void loop()
 //  Serial.println(buttonState);
 
   soundLoop();
-
-
-  if (motionState == HIGH) {// for button
-  //  if(lastNoise >= threshold) {
-    motionOn = false;
-    Serial.println("Motion detected!");
-    Serial.println(motionState);
+  
+  if ((motionState == HIGH && prevIsHigh) || (lastNoise < threshold)) {
+   
+//    Serial.println("Motion detected!");
+//    Serial.println(motionState);
     // If click outside of input delay length light up new LED
   if (millis() > lastClickTime + inputDelay) {
         if (clickCount <= NUM_LEDS) {
@@ -155,13 +155,22 @@ void loop()
     lastClickTime = millis();
     if (clickCount >= 0) {
           clickCount--;
+  //        Serial.println("Countdown:");
+    //      Serial.println(clickCount);
           if (clickCount < 0) {
-            Serial.println("Buzz!");
+   //         Serial.println("Buzz!");
             tone(buzzerPin, 500, 500);
+            delay(2000);
           }
     }
     lastLEDValue = baseLEDBrightness;
-    Serial.println("End of loop");
+//    Serial.println("End of loop");
+  }
+
+  if (motionState == HIGH) {
+    prevIsHigh = true;
+  } else {
+    prevIsHigh = false;
   }
   
   // send the 'leds' array out to the actual LED strip
