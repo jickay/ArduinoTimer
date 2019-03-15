@@ -19,7 +19,7 @@ FASTLED_USING_NAMESPACE
 //#define CLK_PIN   4
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
-#define NUM_LEDS    25
+#define NUM_LEDS    24
 CRGB leds[NUM_LEDS];
 
 #define BRIGHTNESS          75
@@ -44,7 +44,6 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS);
 
   Serial.begin(115200);
-
 }
 
 
@@ -71,9 +70,11 @@ unsigned long dimDelay = ledLength/255;
 unsigned long baseLEDBrightness = 200;
 unsigned long lastLEDValue = baseLEDBrightness;
 
-bool motionOff = true;
+bool motionOn = true;
 
 unsigned long sum = 0;
+unsigned long lastNoise = 0;
+unsigned long threshold = 1.34217E8;
 const int buttonPin = A6;
 
 void soundLoop() {
@@ -82,30 +83,43 @@ void soundLoop() {
   int sampleSize = pow(2,shift);
   for(int i=0; i<sampleSize; i++)
   {
-      sum -= analogRead(buttonPin);
+    unsigned long signal = analogRead(buttonPin);
+//    Serial.println(signal);
+    int threshold = 900;
+    if (signal > threshold) {
+      signal = 0;
+    }
+      if (signal < threshold) {
+        signal = signal * 10;
+      }
+//     Serial.println(signal);
+      sum += signal;
   }
   sum >>= shift;
-  Serial.println(sum);
-  delay(10);
+//  Serial.println(sum);
+  delay(100);
 }
   
 void loop()
 {
-  buttonState = digitalRead(buttonPin);
-//  motionState = digitalRead(motionPin);
+//  buttonState = digitalRead(buttonPin);
+  motionState = digitalRead(motionPin);
 
 //  Serial.println(buttonState);
 
-//  soundLoop();
+  soundLoop();
 
 
-  if (buttonState == HIGH && motionOff) {
-    motionOff = false;
+  if (motionState == HIGH) {// for button
+  //  if(lastNoise >= threshold) {
+    motionOn = false;
+    Serial.println("Motion detected!");
+    Serial.println(motionState);
     // If click outside of input delay length light up new LED
-    if (millis() > lastClickTime + inputDelay) {
+  if (millis() > lastClickTime + inputDelay) {
         if (clickCount <= NUM_LEDS) {
             clickCount++;
-            Serial.println(clickCount);
+//            Serial.println(clickCount);
         }
         gHue = clickCount * 6;
 
@@ -118,7 +132,7 @@ void loop()
   }
   
   if (millis() > lastClickTime + inputDelay) {
-      motionOff = true;
+      motionOn = true;
   }
 
   // Dimming method using hard value
@@ -145,13 +159,10 @@ void loop()
             Serial.println("Buzz!");
             tone(buzzerPin, 500, 500);
           }
-
     }
     lastLEDValue = baseLEDBrightness;
-//    Serial.println(clickCount);
+    Serial.println("End of loop");
   }
-
-
   
   // send the 'leds' array out to the actual LED strip
   FastLED.show();  
